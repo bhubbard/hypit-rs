@@ -1,0 +1,45 @@
+[package]
+name = "hypit-rs"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.80"
+authors = ["Brandon Hubbard", "hypit-rs contributors"]
+license = "Apache-2.0"
+description = "High-performance Rust engine for Hypit: AI viral video cloning, SVML compiler, timeline composition, and video synthesis"
+repository = "https://github.com/bhubbard/hypit-rs"
+keywords = ["video-generation", "svml", "ai-agents", "ffmpeg", "tts"]
+categories = ["command-line-utilities", "multimedia::video"]
+
+[lib]
+name = "hypit"
+path = "src/lib.rs"
+
+[[bin]]
+name = "hypit"
+path = "src/bin/main.rs"
+
+[dependencies]
+tokio = { version = "1.40", features = ["rt-multi-thread", "macros", "net", "io-util", "sync", "time", "fs", "process"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["preserve_order"] }
+clap = { version = "4.5", features = ["derive", "env"] }
+colored = "3.0"
+thiserror = "2.0"
+anyhow = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+regex = "1.10"
+sha2 = "0.10"
+hex = "0.4"
+chrono = { version = "0.4", features = ["serde"] }
+tempfile = "3.12"
+
+[dev-dependencies]
+tokio-test = "0.4"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true

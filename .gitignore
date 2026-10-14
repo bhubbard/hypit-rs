@@ -1,6 +1,8 @@
 node_modules/
 dist/
 coverage/
+target/
+*.mp4
 # Local architecture notes and repository-specific working instructions.
 /design/
 /.agents/development/
