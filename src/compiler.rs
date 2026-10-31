@@ -35,6 +35,55 @@ pub struct ExecutionPlan {
     pub lines_count: usize,
 }
 
+impl ExecutionPlan {
+    /// Computes the critical-path execution makespan (in ms) across the DAG assuming
+    /// independent tasks (such as visual B-roll generation, forced alignment, and caption
+    /// rendering) execute concurrently once their upstream dependencies settle.
+    pub fn critical_path_ms(&self) -> u64 {
+        let task_map: HashMap<&str, &PlanTask> =
+            self.tasks.iter().map(|t| (t.id.as_str(), t)).collect();
+        let mut memo: HashMap<&str, u64> = HashMap::new();
+
+        fn finish_time<'a>(
+            id: &'a str,
+            task_map: &HashMap<&'a str, &'a PlanTask>,
+            memo: &mut HashMap<&'a str, u64>,
+        ) -> u64 {
+            if let Some(&cached) = memo.get(id) {
+                return cached;
+            }
+            let Some(task) = task_map.get(id) else {
+                return 0;
+            };
+            let max_dep = task
+                .dependencies
+                .iter()
+                .map(|d| finish_time(d.as_str(), task_map, memo))
+                .max()
+                .unwrap_or(0);
+            let total = max_dep + task.estimated_duration_ms;
+            memo.insert(id, total);
+            total
+        }
+
+        self.tasks
+            .iter()
+            .map(|t| finish_time(t.id.as_str(), &task_map, &mut memo))
+            .max()
+            .unwrap_or(0)
+    }
+
+    /// Computes the DAG concurrency speedup factor (`sequential_ms / critical_path_ms`).
+    pub fn concurrency_speedup(&self) -> f64 {
+        let cp = self.critical_path_ms();
+        if cp == 0 {
+            1.0
+        } else {
+            self.total_estimated_duration_ms as f64 / cp as f64
+        }
+    }
+}
+
 pub struct SvmlCompiler;
 
 impl SvmlCompiler {
@@ -93,7 +142,7 @@ impl SvmlCompiler {
                     id: align_id.clone(),
                     task_type: TaskType::SpeechAlignment,
                     title: format!("Align Line {}", line_index),
-                    description: format!("Forced phoneme & word alignment via WhisperX/VAD"),
+                    description: "Forced phoneme & word alignment via WhisperX/VAD".to_string(),
                     dependencies: align_deps.clone(),
                     estimated_duration_ms: 100,
                     parameters: BTreeMap::new(),

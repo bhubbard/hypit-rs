@@ -42,4 +42,7 @@ fn test_parse_ranking_football() {
     let plan = SvmlCompiler::compile(&doc, Some("Football Ranking"));
     assert!(plan.lines_count > 0);
     assert!(plan.speakers.contains(&"HOST".to_string()));
+    assert!(plan.critical_path_ms() > 0);
+    assert!(plan.critical_path_ms() <= plan.total_estimated_duration_ms);
+    assert!(plan.concurrency_speedup() >= 1.0);
 }
